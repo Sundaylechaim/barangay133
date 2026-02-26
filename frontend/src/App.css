@@ -1,0 +1,52 @@
+/* FRONTEND: App.css */
+.app-wrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* 25% Faded Background Implementation [User Requirement] */
+.app-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url('./assets/barangay.jpg') no-repeat center center fixed;
+  background-size: cover;
+  opacity: 0.25; /* Your requested fade level */
+  z-index: -1;
+}
+
+.login-card {
+  background: white;
+  padding: 40px;
+  border-radius: 4px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  width: 350px;
+  text-align: center;
+}
+
+.logo-box {
+  width: 40px; height: 40px; border: 2px solid #333;
+  margin: 0 auto 10px; font-weight: bold; line-height: 40px;
+}
+
+.brand-name { font-weight: bold; margin-bottom: 20px; }
+
+.input-field {
+  width: 100%; padding: 12px; margin: 8px 0;
+  background: #f0f0f0; border: none; box-sizing: border-box;
+}
+
+.login-btn {
+  width: 100%; padding: 12px; margin-top: 10px;
+  background: #28a745; color: white; border: none;
+  border-radius: 20px; font-weight: bold; cursor: pointer;
+}
+
+.footer-bar {
+  position: absolute; bottom: 20px; width: 100%;
+  text-align: center; font-size: 12px; color: #555;
+}

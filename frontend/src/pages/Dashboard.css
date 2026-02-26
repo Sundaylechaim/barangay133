@@ -1,0 +1,471 @@
+/* 1. Global Reset and Layout */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.dashboard-page {
+    display: flex; /* Keeps sidebar and main area side-by-side */
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background: url('../assets/barangay.jpg') no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 2. Sidebar Styling */
+.dashboard-sidebar {
+    width: 280px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    border-right: 2px solid #ffffff;
+    z-index: 10;
+}
+
+.sidebar-logo {
+    padding: 30px;
+    text-align: center;
+    border-bottom: 2px solid #000;
+}
+
+.logo-box {
+    width: 80px;
+    height: 60px;
+    border: 3px solid #000;
+    margin: 0 auto 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+    font-weight: bold;
+}
+
+.barangay-text {
+    font-size: 18px;
+    font-weight: 800;
+    color: #000;
+}
+
+/* Navigation Links */
+.nav-menu {
+    flex-grow: 1;
+}
+
+.nav-link {
+    display: block;        /* FIXES OVERLAP: Forces each link onto its own line */
+    text-decoration: none; /* Removes the blue underline from NavLinks */
+    padding: 20px 25px;
+    font-weight: 700;
+    color: #000;
+    border-bottom: 2px solid #000;
+    cursor: pointer;
+    background-color: white;
+    transition: 0.2s;
+}
+
+/* Active State - Solid Black */
+.nav-link.active {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+.logout-section {
+    margin-top: auto;      /* Keeps it pushed towards the bottom */
+    margin-bottom: 100px;   /* INCREASE THIS to lift the button higher */
+    background-color: transparent; 
+    text-align: center;
+    border-top: none;
+    width: 100%;
+}
+
+.logout-btn {
+    background-color: #ff0000; /* Red as seen in design */
+    color: white;
+    border: 2px solid #000;
+    padding: 10px 45px;
+    border-radius: 25px;       /* Pill shape */
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 4px 0px rgba(0,0,0,0.2);
+}
+
+.sidebar-footer-white {
+    height: 50px; /* Must match the height of your main footer */
+    background-color: white;
+    border-top: 2px solid #333;
+    width: 100%;
+}
+
+/* 4. Main Content Container */
+.dashboard-main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    background: rgba(179, 99, 110, 0.4); /* Pinkish overlay */
+}
+
+/* 5. Header Styling */
+.admin-header {
+    height: 70px;
+    background-color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    border-bottom: 2px solid #333;
+}
+
+.welcome-text {
+    font-weight: bold;
+    font-size: 18px;
+    color: #333;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 30px; /* Separates Bell and Menu */
+}
+
+.notif-icon {
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+}
+
+.menu-trigger {
+    font-size: 32px;
+    cursor: pointer;
+    color: #333;
+}
+
+/* 6. Centered Stats Grid (2x2) */
+.stats-section {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Creates two columns */
+    gap: 25px;
+}
+
+.stat-card {
+    background: rgb(255, 255, 255);
+    width: 320px;
+    height: 240px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 10px 10px 0px rgba(0,0,0,0.1); /* Sharp shadow */
+}
+
+.stat-card p {
+    font-size: 20px;
+    font-weight: 900;
+    color: #444;
+}
+
+.stat-card p {
+    font-size: 20px;
+    font-weight: 900;
+    color: #070707;           /* White text for the label */
+    margin-bottom: 10px;
+}
+
+.stat-card h1 {
+    font-size: 100px;
+    color: #000000;           /* White text for the massive numbers */
+    margin-top: 10px;
+    line-height: 0.8;
+    font-weight: 800;
+}
+
+/* 7. Footer */
+.dash-footer {
+    height: 50px;
+    background-color: white;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 40px;
+    gap: 40px;
+    font-size: 14px;
+    color: #333;
+    border-top: 2px solid #333;
+    width: 100%; /* Spans full width */
+}
+
+/* Admin Controls Layout */
+.admin-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px; /* Extra breathing room below buttons */
+}
+
+.management-container {
+    padding: 40px; /* Creates space from the header and sidebar */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* Space between the controls bar and the table */
+}
+
+.search-wrapper {
+    background-color: #ffffff !important; /* Forces white background */
+    border: 2px solid #000000 !important;   /* Solid black border for visibility */
+    padding: 5px 15px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px; /* Matches the button/dropdown aesthetic */
+}
+
+.search-input {
+    background-color: #ffffff !important; /* Ensures the input box is white */
+    color: #000000 !important;            /* Forces the typed text to be black */
+    border: none;
+    outline: none;
+    padding: 5px;
+    font-size: 16px;
+    width: 250px;
+}
+
+/* Ensures the placeholder text (🔍 Search users...) is also visible */
+.search-input::placeholder {
+    color: #333333;
+    opacity: 0.8;
+}
+
+.filter-dropdown {
+    background-color: #ffffff !important; 
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+    padding: 8px;
+    font-weight: bold;
+    margin-left: 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.add-user-btn {
+    background: rgb(9, 255, 0);
+    border: 2px solid #000;
+    padding: 10px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px #000000;
+}
+
+/* Table Design */
+.table-container {
+    padding: 0 40px;
+}
+
+.table-wrapper {
+    background-color: white;
+    padding: 20px;
+    border: 2px solid #000;
+    box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
+    margin-bottom: 40px; /* Prevents touching the white footer */
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 2px solid #fefefe;
+}
+
+.admin-table th, 
+.admin-table td {
+    color: #000000 !important; /* Forces text to be solid black */
+    font-weight: 600;           /* Optional: makes the text slightly bolder */
+    padding: 12px;
+    border: 1px solid #000;
+}
+
+.admin-table td {
+    background-color: #ffffff; /* Ensures the cell background stays white */
+}
+
+.action-cell button {
+    background-color: #2c3e50; /* Dark blue/gray as seen in your Action buttons */
+    color: #ffffff;
+    border: none;
+    padding: 5px 10px;
+    margin: 0 3px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.action-cell {
+    text-align: center;
+    font-size: 18px;
+}
+
+.add-user-card {
+    background: white;
+    padding: 40px;
+    border: 2px solid #000; /* Changed from white to black for contrast */
+    width: 500px;
+    margin: 40px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    box-shadow: 15px 15px 0px rgba(0, 0, 0, 0.2); 
+}
+
+.add-user-card input, 
+.add-user-card select {
+    background-color: #ffffff !important; /* Forces white background */
+    color: #000000 !important;            /* Forces black text */
+    border: 2px solid #000;               /* Solid black border for visibility */
+    padding: 12px;
+    border-radius: 8px; 
+    font-size: 16px;
+    outline: none;
+}
+
+.add-user-card input::placeholder {
+    color: #333333;
+    opacity: 1; 
+}
+
+.save-btn {
+    background-color: #707070; 
+    color: white;
+    border: 2px solid #000;
+    padding: 15px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.save-btn:hover {
+    background-color: #505050;
+}
+
+/* Optional: Style for the Cancel text button seen in prototype */
+.cancel-text {
+    background: none;
+    border: none;
+    color: black;
+    text-decoration: underline;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: -10px;
+}
+
+.empty-row { height: 40px; }
+
+.table-wrapper {
+    max-height: 450px; /* Adjust height based on your screen size */
+    overflow-y: auto;  /* This creates the vertical slide bar */
+    overflow-x: hidden;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: white;
+}
+
+.admin-table thead {
+    position: sticky; /* Keeps the headers visible while you scroll */
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 1;
+}
+
+/* Container for the whole form */
+.add-resident-form-container {
+    background-color: rgba(255, 255, 255, 0.6);
+    padding: 50px;
+    border-radius: 15px;
+    width: 95%;
+    max-width: 1000px;
+    margin: 20px auto;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* The horizontal split */
+.form-grid {
+    display: flex;
+    gap: 50px;
+}
+
+.form-left {
+    flex: 1.5;
+}
+
+.form-right {
+    flex: 1;
+}
+
+/* Text Inputs, Dates, and Selects */
+.resident-input {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    background-color: white; /* White box */
+    color: black;            /* Black text */
+}
+
+/* Gender Radio Section */
+.gender-selection {
+    margin: 20px 0;
+    color: #444;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.gender-label {
+    font-weight: normal;
+    margin-right: 15px;
+}
+
+/* Image Upload Box */
+.image-upload-box {
+    border: 2px solid #bbb;
+    border-radius: 8px;
+    background-color: white;
+    padding: 20px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.upload-label-content {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Dark Grey Submit Button */
+.add-resident-btn {
+    width: 100%;
+    marginTop: 40px;
+    background-color: #5a5a5a;
+    color: white;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.add-resident-btn:hover {
+    background-color: #444;
+}

@@ -1,0 +1,139 @@
+/* src/pages/Login.css */
+
+/* Main Page Container */
+.login-page {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background-color: #d6717c; /* Reddish base color */
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 25% Faded Background Overlay */
+.login-page::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url('../assets/barangay.jpg') no-repeat center center fixed;
+    background-size: cover;
+    opacity: 0.25; /* Your requested 25% fade */
+    z-index: 0;
+}
+
+/* Center Content Area */
+.login-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+/* Logo Section */
+.logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.main-logo {
+    width: 80px;
+    height: auto;
+    margin-bottom: 5px;
+}
+
+.logo-text {
+    font-weight: bold;
+    font-size: 18px;
+    color: #000000;
+    margin: 0;
+}
+
+/* White Authentication Card */
+.auth-card {
+    background: white;
+    padding: 50px 60px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    text-align: center;
+    width: 480px;
+    border-radius: 4px;
+}
+
+.auth-card h2 {
+    font-weight: normal;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+/* Inputs */
+.auth-input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    background: #d9d9d9; /* Grey background for inputs */
+    border: 1px solid #aaa;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+/* Login/Action Button */
+.login-button {
+    background: #28a745; /* Green color */
+    color: white;
+    width: 70%;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease;
+}
+
+.login-button:hover {
+    background: #218838;
+}
+
+/* Forgot Password Link */
+.toggle-link {
+    color: #888;
+    font-size: 13px;
+    margin-top: 20px;
+    cursor: pointer;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.toggle-link:hover {
+    text-decoration: underline;
+    color: #555;
+}
+
+/* Forgot Password Instruction Text */
+.instruction-text {
+    font-size: 18px;
+    line-height: 1.5;
+    color: #333;
+    margin-bottom: 30px;
+    padding: 0 10px;
+}
+
+/* Footer Section */
+.login-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 40px;
+    color: white;
+    font-size: 13px;
+    z-index: 1;
+    background: rgba(0,0,0,0.1);
+}
+
+.footer-left span {
+    margin-right: 30px;
+}
