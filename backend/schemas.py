@@ -1,0 +1,66 @@
+from pydantic import BaseModel, ConfigDict
+from datetime import date
+from typing import Optional
+
+# --- USER SCHEMAS (FR1) ---
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    roles: str
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+    roles: Optional[str] = None
+
+class UserResponse(BaseModel):
+    user_id: int
+    username: str
+    roles: str
+    model_config = ConfigDict(from_attributes=True)
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+# --- TOKEN SCHEMAS ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    role: str
+    user_id: int
+
+# --- RESIDENT SCHEMAS (FR2) ---
+class ResidentBase(BaseModel):
+    first_name: str
+    middle_name: Optional[str] = None
+    last_name: str
+    birthday: date
+    gender: str
+    address: str
+    contact: str
+
+class ResidentCreate(ResidentBase):
+    username: str
+    password: str
+
+class ResidentUpdate(BaseModel):
+    first_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    last_name: Optional[str] = None
+    birthday: Optional[date] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
+    contact: Optional[str] = None
+
+class ResidentResponse(ResidentBase):
+    resident_id: int
+    user_id: int
+    first_name: str
+    middle_name: Optional[str]
+    last_name: str
+    birthday: date
+    gender: str
+    address: str
+    contact: str
+    model_config = ConfigDict(from_attributes=True)
