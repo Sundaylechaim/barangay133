@@ -64,3 +64,21 @@ class ResidentResponse(ResidentBase):
     address: str
     contact: str
     model_config = ConfigDict(from_attributes=True)
+    # --- ANNOUNCEMENT SCHEMAS (FR4 & FR9) ---
+class AnnouncementBase(BaseModel):
+    title: str
+    content: str
+    date_posted: date
+
+class AnnouncementCreate(AnnouncementBase):
+    pass 
+
+class AnnouncementUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    date_posted: Optional[date] = None
+
+class AnnouncementResponse(AnnouncementBase):
+    announcement_id: int
+    created_by: int
+    model_config = ConfigDict(from_attributes=True)

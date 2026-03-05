@@ -24,7 +24,7 @@ def get_db():
         db.close()
 
 # --- APP INITIALIZATION ---
-app = FastAPI(title="Barangay 133 API - FR1 & FR2 Final")
+app = FastAPI(title="Barangay 133 API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -70,6 +70,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise HTTPException(status_code=401, detail="User not found")
     return user
 
+# --- ROLE-BASED ACCESS CONTROL (RBAC) MIDDLEWARE ---
 class RoleChecker:
     def __init__(self, allowed_roles: List[str]):
         self.allowed_roles = allowed_roles
@@ -79,7 +80,10 @@ class RoleChecker:
             raise HTTPException(status_code=403, detail="Operation not permitted for your role")
         return user
 
+# The 3 Strict Roles Defined from the Document
 require_super_admin = RoleChecker(["Super Admin"])
+require_official = RoleChecker(["Super Admin", "Barangay Official"])
+require_resident = RoleChecker(["Super Admin", "Barangay Official", "Resident"])
 
 # -----------------------------------------------------------------
 # ROOT ENDPOINT
@@ -206,4 +210,72 @@ def delete_resident(resident_id: int, db: Session = Depends(get_db), current_use
         db.commit()
         
     return {"message": "Resident and associated system account successfully deleted"}
+# -----------------------------------------------------------------
+# FR4 & FR9: ANNOUNCEMENT MANAGEMENT MODULE
+# -----------------------------------------------------------------
 
+@app.post("/api/announcements/", response_model=schemas.AnnouncementResponse, tags=["FR4: Announcements"])
+def create_announcement(
+    announcement: schemas.AnnouncementCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Blocks Residents
+):
+    """BR3: Allows Barangay Officials and Super Admin to create announcements."""
+    new_announcement = models.Announcement(
+        title=announcement.title,
+        content=announcement.content,
+        date_posted=announcement.date_posted,
+        created_by=current_user.user_id  # Automatically secured via JWT Token
+    )
+    db.add(new_announcement)
+    db.commit()
+    db.refresh(new_announcement)
+    return new_announcement
+
+@app.get("/api/announcements/", response_model=List[schemas.AnnouncementResponse], tags=["FR9: Announcements"])
+def get_announcements(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_resident) # Allows All 3 Roles
+):
+    """BR4: Allows all users to view announcements. Displays newest first."""
+    # Orders by date_posted descending, then by ID descending to strictly follow BR4
+    return db.query(models.Announcement).order_by(
+        models.Announcement.date_posted.desc(), 
+        models.Announcement.announcement_id.desc()
+    ).all()
+
+@app.put("/api/announcements/{announcement_id}", response_model=schemas.AnnouncementResponse, tags=["FR4: Announcements"])
+def update_announcement(
+    announcement_id: int, 
+    updated_data: schemas.AnnouncementUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Blocks Residents
+):
+    """BR3: Allows Barangay Officials to edit an existing announcement."""
+    announcement = db.query(models.Announcement).filter(models.Announcement.announcement_id == announcement_id).first()
+    
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+        
+    for key, value in updated_data.model_dump(exclude_unset=True).items():
+        setattr(announcement, key, value)
+        
+    db.commit()
+    db.refresh(announcement)
+    return announcement
+
+@app.delete("/api/announcements/{announcement_id}", tags=["FR4: Announcements"])
+def delete_announcement(
+    announcement_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Blocks Residents
+):
+    """BR3: Allows Barangay Officials to delete an announcement."""
+    announcement = db.query(models.Announcement).filter(models.Announcement.announcement_id == announcement_id).first()
+    
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+        
+    db.delete(announcement)
+    db.commit()
+    return {"message": "Announcement successfully deleted"}

@@ -65,3 +65,4 @@ class Announcement(Base):
     created_by = Column(Integer, ForeignKey('tbl_Users.user_id', ondelete="CASCADE"))
     title = Column(String)
     content = Column(Text)
+    date_posted = Column(Date)
