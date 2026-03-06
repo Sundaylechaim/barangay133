@@ -210,6 +210,7 @@ def delete_resident(resident_id: int, db: Session = Depends(get_db), current_use
         db.commit()
         
     return {"message": "Resident and associated system account successfully deleted"}
+
 # -----------------------------------------------------------------
 # FR4 & FR9: ANNOUNCEMENT MANAGEMENT MODULE
 # -----------------------------------------------------------------
@@ -279,3 +280,52 @@ def delete_announcement(
     db.delete(announcement)
     db.commit()
     return {"message": "Announcement successfully deleted"}
+@app.post("/api/feedback/", response_model=schemas.FeedbackResponse, tags=["FR10: Feedback"])
+def submit_feedback(
+    feedback: schemas.FeedbackCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_resident) 
+):
+    """
+    FR10: Allows Residents to submit feedback or complaints. 
+    (Automatically attaches their user_id to the submission).
+    """
+    new_feedback = models.Feedback(
+        subject=feedback.subject,
+        content=feedback.content,
+        created_by=current_user.user_id,
+        timestamp=datetime.now()
+    )
+    db.add(new_feedback)
+    db.commit()
+    db.refresh(new_feedback)
+    return new_feedback
+
+@app.get("/api/feedback/", response_model=List[schemas.FeedbackResponse], tags=["FR5: Feedback Management"])
+def get_all_feedback(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Strictly blocks Residents
+):
+    """
+    FR5: Allows Barangay Officials and Super Admin to view all resident feedback.
+    Displays the newest complaints first.
+    """
+    return db.query(models.Feedback).order_by(models.Feedback.timestamp.desc()).all()
+
+@app.delete("/api/feedback/{feedback_id}", tags=["FR5: Feedback Management"])
+def delete_feedback(
+    feedback_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Strictly blocks Residents
+):
+    """
+    FR5: Allows Barangay Officials to resolve and delete a feedback ticket.
+    """
+    feedback_item = db.query(models.Feedback).filter(models.Feedback.feedback_id == feedback_id).first()
+    
+    if not feedback_item:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+        
+    db.delete(feedback_item)
+    db.commit()
+    return {"message": "Feedback successfully deleted"}

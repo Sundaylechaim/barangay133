@@ -66,3 +66,11 @@ class Announcement(Base):
     title = Column(String)
     content = Column(Text)
     date_posted = Column(Date)
+
+class Feedback(Base):
+    __tablename__ = 'tbl_Feedback'
+    feedback_id = Column(Integer, primary_key=True, index=True)
+    created_by = Column(Integer, ForeignKey('tbl_Users.user_id', ondelete="CASCADE"))
+    subject = Column(String)
+    content = Column(Text)
+    timestamp = Column(DateTime)

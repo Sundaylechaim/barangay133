@@ -122,10 +122,24 @@
             </div>
             
             <h3>Test Endpoints</h3>
-            <button class="btn" onclick="getUsers()">Get Users (Super Admin Only)</button>
-            <button class="btn" onclick="getResidents()">Get Residents (Super Admin Only)</button>
-            <button class="btn" onclick="getAnnouncements()">Get Announcements (All Roles)</button>
-            <button class="btn" onclick="createAnnouncement()">Create Announcement (Super Admin/Official Only)</button>
+            <div style="margin-bottom: 15px;">
+                <strong>User Management (FR1):</strong>
+                <button class="btn" onclick="getUsers()">Get Users (Super Admin Only)</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong>Resident Management (FR2):</strong>
+                <button class="btn" onclick="getResidents()">Get Residents (Super Admin Only)</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong>Announcement Management (FR4 & FR9):</strong>
+                <button class="btn" onclick="getAnnouncements()">Get Announcements (All Roles)</button>
+                <button class="btn" onclick="createAnnouncement()">Create Announcement (Super Admin/Official Only)</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong>Feedback Management (FR5 & FR10):</strong>
+                <button class="btn" onclick="createFeedback()">Create Feedback (All Roles)</button>
+                <button class="btn" onclick="getFeedback()">Get Feedback (Super Admin Only)</button>
+            </div>
             <button class="btn btn-danger" onclick="logout()">Logout</button>
         </div>
 
@@ -266,6 +280,18 @@
                 date_posted: new Date().toISOString().split('T')[0]
             };
             makeAuthenticatedRequest(`${API_BASE}/announcements/`, 'POST', announcement);
+        }
+
+        function createFeedback() {
+            const feedback = {
+                subject: 'Test Feedback',
+                content: 'This is a test feedback created via the HTML interface.'
+            };
+            makeAuthenticatedRequest(`${API_BASE}/feedback/`, 'POST', feedback);
+        }
+
+        function getFeedback() {
+            makeAuthenticatedRequest(`${API_BASE}/feedback/`);
         }
     </script>
 </body>

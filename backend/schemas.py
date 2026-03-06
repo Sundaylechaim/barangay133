@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 # --- USER SCHEMAS (FR1) ---
@@ -56,15 +56,9 @@ class ResidentUpdate(BaseModel):
 class ResidentResponse(ResidentBase):
     resident_id: int
     user_id: int
-    first_name: str
-    middle_name: Optional[str]
-    last_name: str
-    birthday: date
-    gender: str
-    address: str
-    contact: str
     model_config = ConfigDict(from_attributes=True)
-    # --- ANNOUNCEMENT SCHEMAS (FR4 & FR9) ---
+
+# --- ANNOUNCEMENT SCHEMAS (FR4 & FR9) ---
 class AnnouncementBase(BaseModel):
     title: str
     content: str
@@ -81,4 +75,19 @@ class AnnouncementUpdate(BaseModel):
 class AnnouncementResponse(AnnouncementBase):
     announcement_id: int
     created_by: int
+    model_config = ConfigDict(from_attributes=True)
+
+# --- FEEDBACK SCHEMAS (FR5 & FR10) ---
+class FeedbackBase(BaseModel):
+    subject: str
+    content: str
+
+class FeedbackCreate(FeedbackBase):
+    pass 
+
+class FeedbackResponse(FeedbackBase):
+    feedback_id: int
+    created_by: int
+    timestamp: datetime
+    
     model_config = ConfigDict(from_attributes=True)
