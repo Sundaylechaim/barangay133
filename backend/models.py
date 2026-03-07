@@ -10,27 +10,6 @@ class User(Base):
     password = Column(String)
     roles = Column(String)
 
-class Admin(Base):
-    __tablename__ = 'tbl_Admin'
-    admin_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('tbl_Users.user_id', ondelete="CASCADE"))
-    first_name = Column(String)
-    middle_name = Column(String)
-    last_name = Column(String)
-    gender = Column(String)
-    birthday = Column(Date)
-    contact = Column(String)
-
-class Official(Base):
-    __tablename__ = 'tbl_Official'
-    official_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('tbl_Users.user_id', ondelete="CASCADE"))
-    first_name = Column(String)
-    middle_name = Column(String)
-    last_name = Column(String)
-    gender = Column(String)
-    birthday = Column(Date)
-    contact = Column(String)
 
 class Resident(Base):
     __tablename__ = 'tbl_Residents'
@@ -74,3 +53,48 @@ class Feedback(Base):
     subject = Column(String)
     content = Column(Text)
     timestamp = Column(DateTime)
+
+class Admin(Base):
+    __tablename__ = 'tbl_Admin'
+    admin_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('tbl_Users.user_id', ondelete="CASCADE"))
+    first_name = Column(String)
+    middle_name = Column(String)
+    last_name = Column(String)
+    gender = Column(String)
+    birthday = Column(Date)
+    contact = Column(String)
+
+class Official(Base):
+    __tablename__ = 'tbl_Official'
+    official_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('tbl_Users.user_id', ondelete="CASCADE"))
+    first_name = Column(String)
+    middle_name = Column(String)
+    last_name = Column(String)
+    gender = Column(String)
+    birthday = Column(Date)
+    contact = Column(String)
+
+class SystemSetting(Base):
+    __tablename__ = 'tbl_SystemSettings'
+    system_id = Column(Integer, primary_key=True, index=True)
+    updated_by = Column(Integer, ForeignKey('tbl_Users.user_id', ondelete="CASCADE"))
+    config_key = Column(String)
+    config_value = Column(String)
+
+class AuditLog(Base):
+    __tablename__ = 'tbl_AuditLogs'
+    log_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('tbl_Users.user_id', ondelete="CASCADE"))
+    action_type = Column(String)
+    timestamp = Column(DateTime)
+
+class Report(Base):
+    __tablename__ = 'tbl_Reports'
+    report_id = Column(Integer, primary_key=True, index=True)
+    title = Column(String)
+    file_format = Column(String)
+    report_type = Column(String)
+    start_date = Column(Date)
+    end_date = Column(Date)

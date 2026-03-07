@@ -329,3 +329,377 @@ def delete_feedback(
     db.delete(feedback_item)
     db.commit()
     return {"message": "Feedback successfully deleted"}
+
+# -----------------------------------------------------------------
+# ADMIN & OFFICIAL PROFILE MANAGEMENT MODULE
+# -----------------------------------------------------------------
+
+@app.post("/api/admins/", response_model=schemas.AdminResponse, tags=["Admin Profiles"])
+def create_admin_profile(
+    admin: schemas.AdminCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Creates a profile for the Super Admin with their personal information.
+    """
+    new_admin = models.Admin(
+        user_id=current_user.user_id,
+        first_name=admin.first_name,
+        middle_name=admin.middle_name,
+        last_name=admin.last_name,
+        birthday=admin.birthday,
+        gender=admin.gender,
+        contact=admin.contact
+    )
+    db.add(new_admin)
+    db.commit()
+    db.refresh(new_admin)
+    return new_admin
+
+@app.get("/api/admins/", response_model=List[schemas.AdminResponse], tags=["Admin Profiles"])
+def get_admin_profiles(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Allows Super Admin to view all admin profiles.
+    """
+    return db.query(models.Admin).all()
+
+@app.put("/api/admins/{admin_id}", response_model=schemas.AdminResponse, tags=["Admin Profiles"])
+def update_admin_profile(
+    admin_id: int, 
+    updated_data: schemas.AdminUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Allows Super Admin to update their own profile information.
+    """
+    admin = db.query(models.Admin).filter(models.Admin.admin_id == admin_id).first()
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin profile not found")
+        
+    for key, value in updated_data.model_dump(exclude_unset=True).items():
+        setattr(admin, key, value)
+        
+    db.commit()
+    db.refresh(admin)
+    return admin
+
+@app.post("/api/officials/", response_model=schemas.OfficialResponse, tags=["Official Profiles"])
+def create_official_profile(
+    official: schemas.OfficialCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Creates a profile for Barangay Officials with their personal information.
+    """
+    new_official = models.Official(
+        user_id=official.user_id,  # Links to existing user account
+        first_name=official.first_name,
+        middle_name=official.middle_name,
+        last_name=official.last_name,
+        birthday=official.birthday,
+        gender=official.gender,
+        contact=official.contact
+    )
+    db.add(new_official)
+    db.commit()
+    db.refresh(new_official)
+    return new_official
+
+@app.get("/api/officials/", response_model=List[schemas.OfficialResponse], tags=["Official Profiles"])
+def get_official_profiles(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Allows Super Admin to view all official profiles.
+    """
+    return db.query(models.Official).all()
+
+@app.put("/api/officials/{official_id}", response_model=schemas.OfficialResponse, tags=["Official Profiles"])
+def update_official_profile(
+    official_id: int, 
+    updated_data: schemas.OfficialUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Allows Super Admin to update official profile information.
+    """
+    official = db.query(models.Official).filter(models.Official.official_id == official_id).first()
+    if not official:
+        raise HTTPException(status_code=404, detail="Official profile not found")
+        
+    for key, value in updated_data.model_dump(exclude_unset=True).items():
+        setattr(official, key, value)
+        
+    db.commit()
+    db.refresh(official)
+    return official
+
+# -----------------------------------------------------------------
+# SYSTEM SETTINGS MODULE
+# -----------------------------------------------------------------
+
+@app.post("/api/system-settings/", response_model=schemas.SystemSettingResponse, tags=["System Settings"])
+def create_system_setting(
+    setting: schemas.SystemSettingCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Allows Super Admin to create new system configuration settings.
+    """
+    new_setting = models.SystemSetting(
+        config_key=setting.config_key,
+        config_value=setting.config_value
+    )
+    db.add(new_setting)
+    db.commit()
+    db.refresh(new_setting)
+    return new_setting
+
+@app.get("/api/system-settings/", response_model=List[schemas.SystemSettingResponse], tags=["System Settings"])
+def get_system_settings(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Allows Super Admin to view all system configuration settings.
+    """
+    return db.query(models.SystemSetting).all()
+
+@app.put("/api/system-settings/{system_id}", response_model=schemas.SystemSettingResponse, tags=["System Settings"])
+def update_system_setting(
+    system_id: int, 
+    updated_data: schemas.SystemSettingUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Allows Super Admin to update system configuration settings.
+    """
+    setting = db.query(models.SystemSetting).filter(models.SystemSetting.system_id == system_id).first()
+    if not setting:
+        raise HTTPException(status_code=404, detail="System setting not found")
+        
+    for key, value in updated_data.model_dump(exclude_unset=True).items():
+        setattr(setting, key, value)
+        
+    db.commit()
+    db.refresh(setting)
+    return setting
+
+@app.delete("/api/system-settings/{system_id}", tags=["System Settings"])
+def delete_system_setting(
+    system_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Allows Super Admin to delete system configuration settings.
+    """
+    setting = db.query(models.SystemSetting).filter(models.SystemSetting.system_id == system_id).first()
+    if not setting:
+        raise HTTPException(status_code=404, detail="System setting not found")
+        
+    db.delete(setting)
+    db.commit()
+    return {"message": "System setting successfully deleted"}
+
+# -----------------------------------------------------------------
+# AUDIT LOGS MODULE
+# -----------------------------------------------------------------
+
+@app.get("/api/audit-logs/", response_model=List[schemas.AuditLogResponse], tags=["Audit Logs"])
+def get_audit_logs(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Allows Super Admin to view all audit logs for system monitoring and compliance.
+    """
+    return db.query(models.AuditLog).order_by(models.AuditLog.timestamp.desc()).all()
+
+@app.post("/api/audit-logs/", response_model=schemas.AuditLogResponse, tags=["Audit Logs"])
+def create_audit_log(
+    audit_log: schemas.AuditLogCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_super_admin)
+):
+    """
+    Allows Super Admin to manually create audit log entries.
+    """
+    new_audit_log = models.AuditLog(
+        user_id=audit_log.user_id,
+        action_type=audit_log.action_type,
+        timestamp=datetime.now()
+    )
+    db.add(new_audit_log)
+    db.commit()
+    db.refresh(new_audit_log)
+    return new_audit_log
+
+# -----------------------------------------------------------------
+# REPORTS MODULE
+# -----------------------------------------------------------------
+
+@app.post("/api/reports/", response_model=schemas.ReportResponse, tags=["Reports"])
+def create_report(
+    report: schemas.ReportCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Blocks Residents
+):
+    """
+    Allows Super Admin and Barangay Official to create report definitions.
+    """
+    new_report = models.Report(
+        title=report.title,
+        file_format=report.file_format,
+        report_type=report.report_type,
+        start_date=report.start_date,
+        end_date=report.end_date
+    )
+    db.add(new_report)
+    db.commit()
+    db.refresh(new_report)
+    return new_report
+
+@app.get("/api/reports/", response_model=List[schemas.ReportResponse], tags=["Reports"])
+def get_reports(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Blocks Residents
+):
+    """
+    Allows Super Admin and Barangay Official to view all report definitions.
+    """
+    return db.query(models.Report).order_by(models.Report.start_date.desc()).all()
+
+@app.put("/api/reports/{report_id}", response_model=schemas.ReportResponse, tags=["Reports"])
+def update_report(
+    report_id: int, 
+    updated_data: schemas.ReportUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Blocks Residents
+):
+    """
+    Allows Super Admin and Barangay Official to update report definitions.
+    """
+    report = db.query(models.Report).filter(models.Report.report_id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    for key, value in updated_data.model_dump(exclude_unset=True).items():
+        setattr(report, key, value)
+        
+    db.commit()
+    db.refresh(report)
+    return report
+
+@app.delete("/api/reports/{report_id}", tags=["Reports"])
+def delete_report(
+    report_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Blocks Residents
+):
+    """
+    Allows Super Admin and Barangay Official to delete report definitions.
+    """
+    report = db.query(models.Report).filter(models.Report.report_id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    db.delete(report)
+    db.commit()
+    return {"message": "Report successfully deleted"}
+# -----------------------------------------------------------------
+# GARBAGE TRUCK MONITORING & NOTIFICATION MODULE
+# -----------------------------------------------------------------
+
+@app.post("/api/detections/", response_model=schemas.DetectionLogResponse, tags=["Hardware Integration"])
+def create_detection_log(
+    log: schemas.DetectionLogCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Pi authenticates as an Official
+):
+    """
+    Records an AI object detection event from the Raspberry Pi camera.
+    """
+    new_log = models.DetectionLog(
+        timestamp=datetime.now(),
+        confidence_score=log.confidence_score,
+        image_path=log.image_path,
+        notification_status=log.notification_status
+    )
+    db.add(new_log)
+    db.commit()
+    db.refresh(new_log)
+    return new_log
+
+@app.get("/api/detections/", response_model=List[schemas.DetectionLogResponse], tags=["Hardware Integration"])
+def get_detection_logs(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Blocks Residents
+):
+    """
+    Allows Barangay Officials to monitor the garbage truck's route and AI logs.
+    """
+    return db.query(models.DetectionLog).order_by(models.DetectionLog.timestamp.desc()).all()
+
+
+@app.post("/api/notifications/", response_model=schemas.NotificationResponse, tags=["Notifications"])
+def create_notification(
+    notification: schemas.NotificationCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_official) # Blocks Residents
+):
+    """
+    Generates a notification for the community based on a specific detection log.
+    """
+    # Verify the detection log actually exists
+    log_entry = db.query(models.DetectionLog).filter(models.DetectionLog.log_id == notification.log_id).first()
+    if not log_entry:
+        raise HTTPException(status_code=404, detail="Detection log not found")
+
+    new_notification = models.Notification(
+        log_id=notification.log_id,
+        status=notification.status,
+        sent_at=datetime.now()
+    )
+    db.add(new_notification)
+    
+    # Automatically update the log's status to reflect a notification was sent
+    log_entry.notification_status = "Sent"
+    
+    db.commit()
+    db.refresh(new_notification)
+    return new_notification
+
+@app.get("/api/notifications/", response_model=List[schemas.NotificationResponse], tags=["Notifications"])
+def get_notifications(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_resident) # Allows All 3 Roles
+):
+    """
+    Allows Residents to fetch the latest garbage truck alerts on their mobile app.
+    """
+    return db.query(models.Notification).order_by(models.Notification.sent_at.desc()).all()
+
+@app.get("/api/activity-history/", response_model=List[schemas.AuditLogResponse], tags=["Activity History"])
+def get_resident_activity_history(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(require_resident)
+):
+    """
+    FR16: Allows residents to view a log of their personal activity history.
+    Shows their login times, feedback submissions, and notification receipts.
+    """
+    # Get all audit logs for this specific user
+    return db.query(models.AuditLog).filter(
+        models.AuditLog.user_id == current_user.user_id
+    ).order_by(models.AuditLog.timestamp.desc()).all()

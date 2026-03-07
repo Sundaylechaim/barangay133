@@ -91,3 +91,130 @@ class FeedbackResponse(FeedbackBase):
     timestamp: datetime
     
     model_config = ConfigDict(from_attributes=True)
+
+# --- DETECTION LOG SCHEMAS ---
+class DetectionLogBase(BaseModel):
+    confidence_score: float
+    image_path: str
+    notification_status: str
+
+class DetectionLogCreate(DetectionLogBase):
+    pass
+
+class DetectionLogResponse(DetectionLogBase):
+    log_id: int
+    timestamp: datetime
+    model_config = ConfigDict(from_attributes=True)
+    
+class NotificationBase(BaseModel):
+    log_id: int
+    status: str
+
+class NotificationCreate(NotificationBase):
+    pass
+
+class NotificationResponse(NotificationBase):
+    notification_id: int
+    log_id: int
+    sent_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+# --- ADMIN & OFFICIAL PROFILE SCHEMAS ---
+class AdminBase(BaseModel):
+    first_name: str
+    middle_name: Optional[str] = None
+    last_name: str
+    gender: str
+    birthday: date
+    contact: str
+
+class AdminCreate(AdminBase):
+    pass
+
+class AdminUpdate(BaseModel):
+    first_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    last_name: Optional[str] = None
+    gender: Optional[str] = None
+    birthday: Optional[date] = None
+    contact: Optional[str] = None
+
+class AdminResponse(AdminBase):
+    admin_id: int
+    user_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+class OfficialBase(BaseModel):
+    first_name: str
+    middle_name: Optional[str] = None
+    last_name: str
+    gender: str
+    birthday: date
+    contact: str
+
+class OfficialCreate(OfficialBase):
+    pass
+
+class OfficialUpdate(BaseModel):
+    first_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    last_name: Optional[str] = None
+    gender: Optional[str] = None
+    birthday: Optional[date] = None
+    contact: Optional[str] = None
+
+class OfficialResponse(OfficialBase):
+    official_id: int
+    user_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+# --- SYSTEM SETTINGS SCHEMAS ---
+class SystemSettingBase(BaseModel):
+    config_key: str
+    config_value: str
+
+class SystemSettingCreate(SystemSettingBase):
+    pass
+
+class SystemSettingUpdate(BaseModel):
+    config_key: Optional[str] = None
+    config_value: Optional[str] = None
+
+class SystemSettingResponse(SystemSettingBase):
+    system_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+# --- AUDIT LOGS SCHEMAS ---
+class AuditLogBase(BaseModel):
+    user_id: int
+    action_type: str
+
+class AuditLogCreate(AuditLogBase):
+    pass
+
+class AuditLogResponse(AuditLogBase):
+    log_id: int
+    timestamp: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+# --- REPORTS SCHEMAS ---
+class ReportBase(BaseModel):
+    title: str
+    file_format: str
+    report_type: str
+    start_date: date
+    end_date: date
+
+class ReportCreate(ReportBase):
+    pass
+
+class ReportUpdate(BaseModel):
+    title: Optional[str] = None
+    file_format: Optional[str] = None
+    report_type: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+class ReportResponse(ReportBase):
+    report_id: int
+    model_config = ConfigDict(from_attributes=True)
