@@ -37,12 +37,17 @@ class ResidentBase(BaseModel):
     last_name: str
     birthday: date
     gender: str
+    civil_status: str  # <--- Added for your Selection Box
     address: str
     contact: str
+    email: Optional[str] = None  # <--- Added for the Email field
+    profile_image: Optional[str] = None  # <--- Stores the filename path in DB
 
 class ResidentCreate(ResidentBase):
     username: str
     password: str
+    # Note: 'confirm_password' isn't needed here because we validate it 
+    # in the frontend before sending the data to the API.
 
 class ResidentUpdate(BaseModel):
     first_name: Optional[str] = None
@@ -50,8 +55,11 @@ class ResidentUpdate(BaseModel):
     last_name: Optional[str] = None
     birthday: Optional[date] = None
     gender: Optional[str] = None
+    civil_status: Optional[str] = None
     address: Optional[str] = None
     contact: Optional[str] = None
+    email: Optional[str] = None
+    profile_image: Optional[str] = None
 
 class ResidentResponse(ResidentBase):
     resident_id: int

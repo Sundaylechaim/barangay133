@@ -4,24 +4,29 @@ from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 
 class User(Base):
-    __tablename__ = 'tbl_Users'
+    __tablename__ = "tbl_users" 
+
     user_id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    password = Column(String)
-    roles = Column(String)
+    username = Column(String(50), unique=True, index=True)
+    password = Column(String(255))
+    roles = Column(String(50))
 
 
 class Resident(Base):
-    __tablename__ = 'tbl_Residents'
+    __tablename__ = "tbl_residents"
+
     resident_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('tbl_Users.user_id', ondelete="CASCADE"))
-    first_name = Column(String)
-    middle_name = Column(String)
-    last_name = Column(String)
-    birthday = Column(Date)
-    gender = Column(String)
-    address = Column(Text)
-    contact = Column(String)
+    user_id = Column(Integer, ForeignKey("tbl_users.user_id"))
+    first_name = Column(String(50))
+    middle_name = Column(String(50), nullable=True)
+    last_name = Column(String(50))
+    birthday = Column(String(20))
+    gender = Column(String(10))
+    civil_status = Column(String(20)) 
+    address = Column(String(255))
+    contact = Column(String(20))
+    email = Column(String(100), nullable=True)
+    profile_image = Column(String(255), nullable=True)
 
 class DetectionLog(Base):
     __tablename__ = 'tbl_DetectionLog'

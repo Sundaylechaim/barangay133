@@ -1,0 +1,106 @@
+/* --- GLOBAL VARIABLES --- */
+:root {
+  --primary-red: #a3384a;      /* Your Figma Red */
+  --sidebar-white: #ffffff;
+  --header-gray: #e0e0e0;
+  --border-black: #000000;
+  --text-main: #333333;
+  --success-green: #28a745;
+  --bg-faded: rgba(255, 255, 255, 0.25);
+}
+
+/* --- LAYOUT WRAPPERS --- */
+.app-wrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden;
+}
+
+.app-wrapper::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url('./assets/barangay.jpg') no-repeat center center;
+  background-size: cover;
+  opacity: 0.25; 
+  z-index: -1;
+}
+
+/* --- LOGIN MODULE --- */
+.login-card {
+  background: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.logo-box {
+  width: 50px; height: 50px; 
+  border: 2px solid var(--border-black);
+  margin: 0 auto 15px; 
+  font-weight: bold; 
+  line-height: 50px;
+}
+
+.input-field {
+  width: 100%; padding: 14px; margin: 10px 0;
+  background: #f4f4f4; border: 1px solid #ddd;
+  border-radius: 4px; box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+.input-field:focus {
+  border-color: var(--primary-red);
+  outline: none;
+}
+
+.login-btn {
+  width: 100%; padding: 14px; margin-top: 15px;
+  background: var(--success-green); color: white;
+  border: none; border-radius: 25px;
+  font-weight: bold; cursor: pointer;
+  transition: transform 0.2s, background 0.3s;
+}
+
+.login-btn:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+/* --- DASHBOARD SIDEBAR --- */
+.dashboard-sidebar {
+  background-color: var(--sidebar-white);
+  color: var(--border-black);
+  border-right: 1px solid #ddd;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.nav-link {
+  color: var(--border-black);
+  padding: 16px 25px;
+  display: block;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #eee;
+}
+
+.nav-link:hover {
+  background-color: #f9f9f9;
+}
+
+.nav-link.active {
+  background-color: var(--border-black);
+  color: var(--sidebar-white);
+}
+

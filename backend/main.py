@@ -1,15 +1,24 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Response, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 import bcrypt
 import jwt
 from datetime import datetime, timedelta
-from typing import List
-
+import typing
+from fastapi.responses import StreamingResponse
+from fpdf import FPDF
+import io
 import models
 import schemas
+import shutil
+import os
+
+UPLOAD_DIR = "static/profile_pics"
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
 
 # --- DATABASE CONNECTION ---
 SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3306/barangay133_db"
@@ -25,10 +34,10 @@ def get_db():
 
 # --- APP INITIALIZATION ---
 app = FastAPI(title="Barangay 133 API")
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["http://localhost:5173"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,7 +81,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 # --- ROLE-BASED ACCESS CONTROL (RBAC) MIDDLEWARE ---
 class RoleChecker:
-    def __init__(self, allowed_roles: List[str]):
+    def __init__(self, allowed_roles: typing.List[str]):
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: models.User = Depends(get_current_user)):
@@ -121,7 +130,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-@app.get("/api/users/", response_model=List[schemas.UserResponse], tags=["FR1: User Management"])
+@app.get("/api/users/", response_model=typing.List[schemas.UserResponse], tags=["FR1: User Management"])
 def get_users(db: Session = Depends(get_db), current_user: models.User = Depends(require_super_admin)):
     return db.query(models.User).all()
 
@@ -156,32 +165,64 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_user: model
 # FR2: RESIDENT RECORDS MANAGEMENT (Full CRUD)
 # -----------------------------------------------------------------
 @app.post("/api/residents/", response_model=schemas.ResidentResponse, tags=["FR2: Resident Management"])
-def create_resident(resident: schemas.ResidentCreate, db: Session = Depends(get_db), current_user: models.User = Depends(require_super_admin)):
-    if db.query(models.User).filter(models.User.username == resident.username).first():
+async def create_resident(
+    username: str = Form(...),
+    password: str = Form(...),
+    first_name: str = Form(...),
+    middle_name: str = Form(None),
+    last_name: str = Form(...),
+    birthday: str = Form(...), # Frontend sends this as a string "YYYY-MM-DD"
+    gender: str = Form(...),
+    civil_status: str = Form(...),
+    address: str = Form(...),
+    contact: str = Form(...),
+    email: str = Form(None),
+    file: UploadFile = File(None), # The profile image
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_super_admin)
+):
+    # 1. Check if user exists
+    if db.query(models.User).filter(models.User.username == username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
     
-    hashed_password = get_password_hash(resident.password)
-    new_user = models.User(username=resident.username, password=hashed_password, roles="Resident")
+    # 2. Create the System Account first
+    hashed_password = get_password_hash(password)
+    new_user = models.User(username=username, password=hashed_password, roles="Resident")
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
+    db.flush() # This generates the user_id without finishing the transaction
+
+    # 3. Handle the Image File
+    filename = None
+    if file:
+        # Create a unique name: e.g., "user_10_profile.jpg"
+        extension = os.path.splitext(file.filename)[1]
+        filename = f"user_{new_user.user_id}_profile{extension}"
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+    # 4. Create the Resident Profile
     new_resident = models.Resident(
         user_id=new_user.user_id,
-        first_name=resident.first_name,
-        middle_name=resident.middle_name,
-        last_name=resident.last_name,
-        birthday=resident.birthday,
-        gender=resident.gender,
-        address=resident.address,
-        contact=resident.contact
+        first_name=first_name,
+        middle_name=middle_name,
+        last_name=last_name,
+        birthday=birthday,
+        gender=gender,
+        civil_status=civil_status,
+        address=address,
+        contact=contact,
+        email=email,
+        profile_image=filename # Store just the filename string in DB
     )
+    
     db.add(new_resident)
-    db.commit()
+    db.commit() # Save both User and Resident at once
     db.refresh(new_resident)
     return new_resident
 
-@app.get("/api/residents/", response_model=List[schemas.ResidentResponse], tags=["FR2: Resident Management"])
+@app.get("/api/residents/", response_model=typing.List[schemas.ResidentResponse], tags=["FR2: Resident Management"])
 def get_residents(db: Session = Depends(get_db), current_user: models.User = Depends(require_super_admin)):
     return db.query(models.Resident).all()
 
@@ -233,7 +274,7 @@ def create_announcement(
     db.refresh(new_announcement)
     return new_announcement
 
-@app.get("/api/announcements/", response_model=List[schemas.AnnouncementResponse], tags=["FR9: Announcements"])
+@app.get("/api/announcements/", response_model=typing.List[schemas.AnnouncementResponse], tags=["FR9: Announcements"])
 def get_announcements(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(require_resident) # Allows All 3 Roles
@@ -280,6 +321,7 @@ def delete_announcement(
     db.delete(announcement)
     db.commit()
     return {"message": "Announcement successfully deleted"}
+
 @app.post("/api/feedback/", response_model=schemas.FeedbackResponse, tags=["FR10: Feedback"])
 def submit_feedback(
     feedback: schemas.FeedbackCreate, 
@@ -301,17 +343,35 @@ def submit_feedback(
     db.refresh(new_feedback)
     return new_feedback
 
-@app.get("/api/feedback/", response_model=List[schemas.FeedbackResponse], tags=["FR5: Feedback Management"])
+@app.get("/api/feedback/", tags=["FR5: Feedback Management"])
 def get_all_feedback(
     db: Session = Depends(get_db), 
-    current_user: models.User = Depends(require_official) # Strictly blocks Residents
+    current_user: models.User = Depends(require_official)
 ):
     """
     FR5: Allows Barangay Officials and Super Admin to view all resident feedback.
-    Displays the newest complaints first.
+    Joins with the Resident table to display names.
     """
-    return db.query(models.Feedback).order_by(models.Feedback.timestamp.desc()).all()
-
+    results = db.query(
+        models.Feedback, 
+        models.Resident.first_name, 
+        models.Resident.last_name
+    ).join(
+        models.Resident, models.Feedback.created_by == models.Resident.user_id
+    ).order_by(
+        models.Feedback.timestamp.desc()
+    ).all()
+    
+    return [
+        {
+            "feedback_id": f.Feedback.feedback_id,
+            "name": f"{f.first_name} {f.last_name}",
+            "activity": "Feedback Submitted",
+            "description": f.Feedback.subject,
+            "content": f.Feedback.content,
+            "date": f.Feedback.timestamp.strftime("%m-%d-%Y")
+        } for f in results
+    ]
 @app.delete("/api/feedback/{feedback_id}", tags=["FR5: Feedback Management"])
 def delete_feedback(
     feedback_id: int, 
@@ -357,7 +417,7 @@ def create_admin_profile(
     db.refresh(new_admin)
     return new_admin
 
-@app.get("/api/admins/", response_model=List[schemas.AdminResponse], tags=["Admin Profiles"])
+@app.get("/api/admins/", response_model=typing.List[schemas.AdminResponse], tags=["Admin Profiles"])
 def get_admin_profiles(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(require_super_admin)
@@ -411,7 +471,7 @@ def create_official_profile(
     db.refresh(new_official)
     return new_official
 
-@app.get("/api/officials/", response_model=List[schemas.OfficialResponse], tags=["Official Profiles"])
+@app.get("/api/officials/", response_model=typing.List[schemas.OfficialResponse], tags=["Official Profiles"])
 def get_official_profiles(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(require_super_admin)
@@ -464,7 +524,7 @@ def create_system_setting(
     db.refresh(new_setting)
     return new_setting
 
-@app.get("/api/system-settings/", response_model=List[schemas.SystemSettingResponse], tags=["System Settings"])
+@app.get("/api/system-settings/", response_model=typing.List[schemas.SystemSettingResponse], tags=["System Settings"])
 def get_system_settings(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(require_super_admin)
@@ -516,7 +576,7 @@ def delete_system_setting(
 # AUDIT LOGS MODULE
 # -----------------------------------------------------------------
 
-@app.get("/api/audit-logs/", response_model=List[schemas.AuditLogResponse], tags=["Audit Logs"])
+@app.get("/api/audit-logs/", response_model=typing.List[schemas.AuditLogResponse], tags=["Audit Logs"])
 def get_audit_logs(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(require_super_admin)
@@ -553,67 +613,145 @@ def create_audit_log(
 def create_report(
     report: schemas.ReportCreate, 
     db: Session = Depends(get_db), 
-    current_user: models.User = Depends(require_official) # Blocks Residents
+    current_user: models.User = Depends(require_official)
 ):
     """
-    Allows Super Admin and Barangay Official to create report definitions.
+    FR: Generates report data based on Type (Announcement/Feedback).
+    Includes logic for 'Main Idea' and Resident Name association.
     """
+    
+    # This string will hold the summarized text that goes into the report file
+    generated_content = ""
+    
+    if report.report_type == "Announcement":
+        # Fetch announcements within the date range
+        items = db.query(models.Announcement).filter(
+            models.Announcement.date_posted >= report.start_date,
+            models.Announcement.date_posted <= report.end_date
+        ).all()
+        
+        # Summarize: Title + a slice of the content
+        generated_content = "\n".join([
+            f"[{a.date_posted}] {a.title}: {a.content[:150]}..." 
+            for a in items
+        ]) if items else "No announcements found."
+
+    elif report.report_type == "Feedback":
+        # Join with Resident table to get the full names
+        items = db.query(
+            models.Feedback, models.Resident.first_name, models.Resident.last_name
+        ).join(
+            models.Resident, models.Feedback.created_by == models.Resident.user_id
+        ).filter(
+            models.Feedback.timestamp >= report.start_date,
+            models.Feedback.timestamp <= report.end_date
+        ).all()
+        
+        # Summarize: Resident Name + their actual feedback
+        generated_content = "\n".join([
+            f"Resident: {f.first_name} {f.last_name} | Subject: {f.Feedback.subject} | Message: {f.Feedback.content}" 
+            for f in items
+        ]) if items else "No feedback entries found."
+
+    # SAVE THE RECORD TO THE DATABASE
     new_report = models.Report(
         title=report.title,
-        file_format=report.file_format,
+        file_format=report.file_format, # This handles your PDF/DOCX radio buttons
         report_type=report.report_type,
         start_date=report.start_date,
         end_date=report.end_date
+        # Note: If you have a 'content' column in your Report model, 
+        # you should add: content=generated_content
     )
+    
     db.add(new_report)
     db.commit()
     db.refresh(new_report)
     return new_report
 
-@app.get("/api/reports/", response_model=List[schemas.ReportResponse], tags=["Reports"])
-def get_reports(
-    db: Session = Depends(get_db), 
-    current_user: models.User = Depends(require_official) # Blocks Residents
-):
-    """
-    Allows Super Admin and Barangay Official to view all report definitions.
-    """
+@app.get("/api/reports/", response_model=typing.List[schemas.ReportResponse], tags=["Reports"])
+def get_reports(db: Session = Depends(get_db), current_user: models.User = Depends(require_official)):
     return db.query(models.Report).order_by(models.Report.start_date.desc()).all()
 
-@app.put("/api/reports/{report_id}", response_model=schemas.ReportResponse, tags=["Reports"])
-def update_report(
-    report_id: int, 
-    updated_data: schemas.ReportUpdate, 
-    db: Session = Depends(get_db), 
-    current_user: models.User = Depends(require_official) # Blocks Residents
-):
-    """
-    Allows Super Admin and Barangay Official to update report definitions.
-    """
+@app.get("/api/reports/download/{report_id}", tags=["Reports"])
+def download_report(report_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_official)):
     report = db.query(models.Report).filter(models.Report.report_id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
-        
-    for key, value in updated_data.model_dump(exclude_unset=True).items():
-        setattr(report, key, value)
-        
-    db.commit()
-    db.refresh(report)
-    return report
+
+    # --- 1. RE-FETCH THE DATA FOR THE PDF ---
+    report_content = []
+    
+    if report.report_type == "Announcement":
+        items = db.query(models.Announcement).filter(
+            models.Announcement.date_posted >= report.start_date,
+            models.Announcement.date_posted <= report.end_date
+        ).all()
+        for a in items:
+            report_content.append(f"[{a.date_posted}] {a.title}\nSummary: {a.content[:150]}...\n")
+            
+    elif report.report_type == "Feedback":
+        items = db.query(
+            models.Feedback, models.Resident.first_name, models.Resident.last_name
+        ).join(
+            models.Resident, models.Feedback.created_by == models.Resident.user_id
+        ).filter(
+            models.Feedback.timestamp >= report.start_date,
+            models.Feedback.timestamp <= report.end_date
+        ).all()
+        for f in items:
+            report_content.append(f"Resident: {f.first_name} {f.last_name}\nSubject: {f.Feedback.subject}\nMessage: {f.Feedback.content}\n")
+
+    # --- 2. GENERATE ACTUAL PDF ---
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Header Styling
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="BARANGAY 133 - OFFICIAL SUMMARY REPORT", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Info Section
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, txt=f"Report: {report.title}", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 10, txt=f"Type: {report.report_type}", ln=True)
+    pdf.cell(0, 10, txt=f"Period: {report.start_date} to {report.end_date}", ln=True)
+    pdf.ln(5)
+    pdf.cell(0, 0, border="T", ln=True) # Horizontal Line
+    pdf.ln(5)
+
+    # Content Section
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, txt="GENERATED DATA:", ln=True)
+    pdf.ln(2)
+    
+    pdf.set_font("Arial", '', 10)
+    if not report_content:
+        pdf.multi_cell(0, 10, txt="No data found for the selected period.")
+    else:
+        for entry in report_content:
+            # Multi_cell handles long text wrapping automatically
+            pdf.multi_cell(0, 7, txt=entry)
+            pdf.ln(2)
+
+    # --- 3. SEND AS PROPER PDF ---
+    # pdf.output(dest='S') returns a string, we encode it to bytes
+    pdf_bytes = pdf.output(dest='S').encode('latin-1')
+    
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename={report.title.replace(' ', '_')}.pdf"
+        }
+    )
 
 @app.delete("/api/reports/{report_id}", tags=["Reports"])
-def delete_report(
-    report_id: int, 
-    db: Session = Depends(get_db), 
-    current_user: models.User = Depends(require_official) # Blocks Residents
-):
-    """
-    Allows Super Admin and Barangay Official to delete report definitions.
-    """
+def delete_report(report_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_official)):
     report = db.query(models.Report).filter(models.Report.report_id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
-        
     db.delete(report)
     db.commit()
     return {"message": "Report successfully deleted"}
@@ -641,7 +779,7 @@ def create_detection_log(
     db.refresh(new_log)
     return new_log
 
-@app.get("/api/detections/", response_model=List[schemas.DetectionLogResponse], tags=["Hardware Integration"])
+@app.get("/api/detections/", response_model=typing.List[schemas.DetectionLogResponse], tags=["Hardware Integration"])
 def get_detection_logs(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(require_official) # Blocks Residents
@@ -680,7 +818,7 @@ def create_notification(
     db.refresh(new_notification)
     return new_notification
 
-@app.get("/api/notifications/", response_model=List[schemas.NotificationResponse], tags=["Notifications"])
+@app.get("/api/notifications/", response_model=typing.List[schemas.NotificationResponse], tags=["Notifications"])
 def get_notifications(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(require_resident) # Allows All 3 Roles
@@ -690,16 +828,33 @@ def get_notifications(
     """
     return db.query(models.Notification).order_by(models.Notification.sent_at.desc()).all()
 
-@app.get("/api/activity-history/", response_model=List[schemas.AuditLogResponse], tags=["Activity History"])
-def get_resident_activity_history(
+@app.get("/api/activity-history/", tags=["Activity History"])
+def get_all_activity_history(
     db: Session = Depends(get_db), 
-    current_user: models.User = Depends(require_resident)
+    current_user: models.User = Depends(require_official) # Changed to require_official
 ):
     """
-    FR16: Allows residents to view a log of their personal activity history.
-    Shows their login times, feedback submissions, and notification receipts.
+    Allows Barangay Officials to view ALL resident activity.
+    Joins with the User table to get the usernames for the 'Name' column.
     """
-    # Get all audit logs for this specific user
-    return db.query(models.AuditLog).filter(
-        models.AuditLog.user_id == current_user.user_id
-    ).order_by(models.AuditLog.timestamp.desc()).all()
+    # We join AuditLog with User to get the actual username string
+    results = db.query(
+        models.AuditLog, 
+        models.User.username
+    ).join(
+        models.User, models.AuditLog.user_id == models.User.user_id
+    ).order_by(
+        models.AuditLog.timestamp.desc()
+    ).all()
+    
+    # Format the data to match what your React table expects
+    return [
+        {
+            "id": log.AuditLog.log_id,
+            "username": log.username,
+            "action_type": log.AuditLog.action_type,
+            "details": "User performed a system action", # You can customize this
+            "timestamp": log.AuditLog.timestamp,
+            "status": "Success"
+        } for log in results
+    ]
